@@ -18,6 +18,41 @@ class WordCountAndTimePlugin {
         //becuase in class second arguement is an array instead of string, with it poiting to this class and the method name
         add_action('admin_menu',[$this, 'adminPage']);
         add_action('admin_init',[$this,'settings']);
+        add_filter('the_content',[$this, 'ifWrap']);
+    }
+
+    function ifWrap($content) {
+        //check the 3 check boxes and if its in a single blog post
+        if((is_main_query() AND is_single()) AND (get_option('wcp_wordcount', '1') || get_option('wcp_charcount', '1') || get_option('wcp_readtime', '1'))) {
+            return $this->createHTML($content);
+        }
+        return $content;
+    }
+
+    function createHTML($content) {
+        $html = '<h3>'. esc_html(get_option('wcp_headline', 'Post Statistics')) .'</h3><p>' ;
+
+        if(get_option('wcp_wordcount', '1') || get_option('wcp_readtime','1')) {
+            $wordCount = str_word_count(strip_tags($content));
+            if(get_option('wcp_wordcount', '1')) {
+                $html .= 'This post has ' . $wordCount . ' words.<br>';
+            }
+
+            if(get_option('wcp_readtime', '1')) {
+                $html .= 'This post will take about ' . round($wordCount/225) . ' minutes(s) to read.<br>';
+            }
+        }
+
+        if(get_option('wcp_charcount', '1')) {
+            $html .= 'This post has ' . strlen(strip_tags($content)) . ' characters.<br>';
+        }
+
+        $html .= '</p>';
+
+        if(get_option('wcp_location', '0') == '0') {
+            return $html . $content;
+        }
+        return $content . $html;
     }
 
     function settings() { 
